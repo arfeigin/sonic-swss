@@ -44,6 +44,7 @@
 #include "bfdorch.h"
 #include "srv6orch.h"
 #include "nvgreorch.h"
+#include "txmonitororch.h"
 
 using namespace swss;
 
