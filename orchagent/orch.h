@@ -34,6 +34,7 @@ const char state_db_key_delimiter  = '|';
 #define INVM_PLATFORM_SUBSTRING "innovium"
 #define MLNX_PLATFORM_SUBSTRING "mellanox"
 #define BRCM_PLATFORM_SUBSTRING "broadcom"
+#define BRCM_DNX_PLATFORM_SUBSTRING "broadcom-dnx"
 #define BFN_PLATFORM_SUBSTRING  "barefoot"
 #define VS_PLATFORM_SUBSTRING   "vs"
 #define NPS_PLATFORM_SUBSTRING  "nephos"
@@ -65,6 +66,7 @@ typedef struct
     // multiple objects being referenced are separated by ','
     std::map<std::string, std::string> m_objsReferencingByMe;
     sai_object_id_t m_saiObjectId;
+    bool m_pendingRemove;
 } referenced_object;
 
 typedef std::map<std::string, referenced_object> object_reference_map;
