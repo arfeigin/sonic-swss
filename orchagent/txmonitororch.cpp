@@ -192,7 +192,7 @@ void TxMonitorOrch::txErrorsCheck()
     for (auto &currPort : m_portsMap)
     {
         string ifaceName = currPort.first;
-        PortTxInfo currPortInfo = currPort.second;
+        PortTxInfo& currPortInfo = currPort.second;
         string oid = currPortInfo.getOid();
         uint64_t prevTxErrCnt = currPortInfo.getTxErrsCnt();
         uint64_t newTxErrCnt = getTxErrCnt(oid, prevTxErrCnt);
