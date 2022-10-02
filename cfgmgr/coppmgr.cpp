@@ -9,6 +9,7 @@
 #include "shellcmd.h"
 #include "warm_restart.h"
 #include "json.hpp"
+#include <unordered_map>
 
 using json = nlohmann::json;
 
@@ -25,6 +26,10 @@ void CoppMgr::parseInitFile(void)
         SWSS_LOG_ERROR("COPP init file %s not found", COPP_INIT_FILE);
         return;
     }
+
+    unordered_map<string, string> currCoppTable;
+    unordered_map<string, string>::const_iterator it;
+
     json j = json::parse(ifs);
     for(auto tbl = j.begin(); tbl != j.end(); tbl++)
     {
@@ -36,11 +41,31 @@ void CoppMgr::parseInitFile(void)
             json fvp = k.value();
             vector<FieldValueTuple> fvs;
 
+            vector<FieldValueTuple> currFvs;
+            m_coppTable.get(table_key, currFvs);
+            for (auto currFv: currFvs)
+            {
+                currCoppTable[fvField(currFv)] = fvValue(currFv);
+            }
+
             for (auto f = fvp.begin(); f != fvp.end(); f++)
             {
-                FieldValueTuple fv(f.key(), f.value().get<std::string>());
+                string fKey = f.key();
+                string fVal = f.value().get<std::string>();
+                it = currCoppTable.find(fKey);
+                if (it != currCoppTable.end())
+                {
+                    if (!it->second.compare(fVal))
+                    {
+                        continue;
+                    }
+                }
+
+                FieldValueTuple fv(fKey, fVal);
                 fvs.push_back(fv);
             }
+            currCoppTable.clear();
+
             if (table_name == CFG_COPP_TRAP_TABLE_NAME)
             {
                 m_coppTrapInitCfg[table_key] = fvs;
