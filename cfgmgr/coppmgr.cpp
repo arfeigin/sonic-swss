@@ -257,14 +257,14 @@ std::vector<std::string> &prev_copp_keys)
 
     for (auto it = m_cfg.begin(); it != m_cfg.end();)
     {
-        std::vector<FieldValueTuple> upcoming_fvs = it.second;
+        std::vector<FieldValueTuple> upcoming_fvs = it->second;
 
-        auto key = std::find(prev_copp_keys.begin(), prev_copp_keys.end(), it.first);
+        auto key = std::find(prev_copp_keys.begin(), prev_copp_keys.end(), it->first);
         if (key != prev_copp_keys.end())
         {
             // key exists, check if overwrite or ignore
             std::vector<FieldValueTuple> prev_fvs;
-            m_coppTable.get(it.first, prev_fvs);
+            m_coppTable.get(it->first, prev_fvs);
             bool differs = true;
             for (auto it1: upcoming_fvs)
             {
@@ -279,7 +279,7 @@ std::vector<std::string> &prev_copp_keys)
                         else
                         {
                             // TODO: add prints to understand if this is really overwrite
-                            m_coppTable.del(fvField); // delete for overwrite
+                            m_coppTable.del(fvField(it1)); // delete for overwrite
                         }
                         break;
                     }
