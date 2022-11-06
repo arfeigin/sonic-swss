@@ -191,7 +191,8 @@ bool CoppMgr::isTrapIdDisabled(string trap_id)
     return true;
 }
 
-void CoppMgr::mergeConfig(CoppCfg &init_cfg, CoppCfg &m_cfg, std::vector<std::string> &cfg_keys, Table &cfgTable)
+void CoppMgr::mergeConfig(CoppCfg &init_cfg, CoppCfg &m_cfg, std::vector<std::string> &cfg_keys, Table &cfgTable,
+std::vector<std::string> &prev_copp_keys)
 {
     /* Read the init configuration first. If the same key is present in
      * user configuration, override the init fields with user fields
@@ -253,6 +254,56 @@ void CoppMgr::mergeConfig(CoppCfg &init_cfg, CoppCfg &m_cfg, std::vector<std::st
             m_cfg[i] = cfg_fvs;
         }
     }
+
+    for (auto it = m_cfg.begin(); it != m_cfg.end();)
+    {
+        std::vector<FieldValueTuple> upcoming_fvs = it->second;
+
+        auto key = std::find(prev_copp_keys.begin(), prev_copp_keys.end(), it->first);
+        if (key != prev_copp_keys.end())
+        {
+            // key exists, check if overwrite or ignore
+            std::vector<FieldValueTuple> prev_fvs;
+            m_coppTable.get(it->first, prev_fvs);
+            bool differs = true;
+            for (auto it1: upcoming_fvs)
+            {
+                for (auto it2: prev_fvs)
+                {
+                    if(fvField(it1) == fvField(it2))
+                    {
+                        if (fvValue(it1) == fvValue(it2))
+                        {
+                            differs = false;
+                        }
+                        else
+                        {
+                            // TODO: add prints to understand if this is really overwrite
+                            m_coppTable.del(fvField(it1)); // delete for overwrite
+                        }
+                        break;
+                    }
+                }
+                if (!differs)
+                {
+                    break;
+                }
+            }
+
+            if (!differs)
+            {
+                m_cfg.erase(it++); // ignore since entry exists
+            }
+            else
+            {
+                ++it;
+            }
+        }
+        else
+        {
+            // key is not in preserved copp table insert - or actually do nothing
+        }
+    }
 }
 
 CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, const vector<string> &tableNames) :
@@ -270,6 +321,7 @@ CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, c
     std::vector<string> group_keys;
     std::vector<string> trap_keys;
     std::vector<string> feature_keys;
+    std::vector<string> prev_copp_keys;
 
     std::vector<string> group_cfg_keys;
     std::vector<string> trap_cfg_keys;
@@ -280,6 +332,7 @@ CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, c
     m_cfgCoppGroupTable.getKeys(group_cfg_keys);
     m_cfgCoppTrapTable.getKeys(trap_cfg_keys);
     m_cfgFeatureTable.getKeys(feature_keys);
+    m_coppTable.getKeys(prev_copp_keys);
 
 
     for (auto i: feature_keys)
@@ -289,7 +342,17 @@ CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, c
         m_featuresCfgTable.emplace(i, feature_fvs);
     }
 
-    mergeConfig(m_coppTrapInitCfg, trap_cfg, trap_cfg_keys, m_cfgCoppTrapTable);
+    for (auto i : prev_copp_keys)
+    {
+        auto it1 = std::find(group_cfg_keys.begin(), group_cfg_keys.end(), i);
+        auto it2 = std::find(trap_cfg_keys.begin(), trap_cfg_keys.end(), i);
+        if (it1 == group_cfg_keys.end() && it2 == trap_cfg_keys.end())
+        {
+            m_coppTable.del(i);
+        }
+    }
+
+    mergeConfig(m_coppTrapInitCfg, trap_cfg, trap_cfg_keys, m_cfgCoppTrapTable, prev_copp_keys);
 
     for (auto i : trap_cfg)
     {
@@ -327,7 +390,7 @@ CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, c
         }
     }
 
-    mergeConfig(m_coppGroupInitCfg, group_cfg, group_cfg_keys, m_cfgCoppGroupTable);
+    mergeConfig(m_coppGroupInitCfg, group_cfg, group_cfg_keys, m_cfgCoppGroupTable, prev_copp_keys);
 
     for (auto i: group_cfg)
     {
