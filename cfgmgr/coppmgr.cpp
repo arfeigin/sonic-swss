@@ -9,6 +9,7 @@
 #include "shellcmd.h"
 #include "warm_restart.h"
 #include "json.hpp"
+#include <unordered_map>
 
 using json = nlohmann::json;
 
@@ -25,6 +26,10 @@ void CoppMgr::parseInitFile(void)
         SWSS_LOG_ERROR("COPP init file %s not found", COPP_INIT_FILE);
         return;
     }
+
+    unordered_map<string, string> currCoppTable;
+    unordered_map<string, string>::const_iterator it;
+
     json j = json::parse(ifs);
     for(auto tbl = j.begin(); tbl != j.end(); tbl++)
     {
@@ -36,11 +41,36 @@ void CoppMgr::parseInitFile(void)
             json fvp = k.value();
             vector<FieldValueTuple> fvs;
 
+            vector<FieldValueTuple> currFvs;
+            m_coppTable.get(table_key, currFvs);
+            for (auto currFv: currFvs)
+            {
+                currCoppTable[fvField(currFv)] = fvValue(currFv);
+            }
+
             for (auto f = fvp.begin(); f != fvp.end(); f++)
+            {
+                string fKey = f.key();
+                string fVal = f.value().get<std::string>();
+                it = currCoppTable.find(fKey);
+                if (it != currCoppTable.end())
+                {
+                    if (!it->second.compare(fVal))
+                    {
+                        continue;
+                    }
+                }
+
+                FieldValueTuple fv(fKey, fVal);
+                fvs.push_back(fv);
+            }
+            currCoppTable.clear();
+
+            /*for (auto f = fvp.begin(); f != fvp.end(); f++)
             {
                 FieldValueTuple fv(f.key(), f.value().get<std::string>());
                 fvs.push_back(fv);
-            }
+            }*/
             if (table_name == CFG_COPP_TRAP_TABLE_NAME)
             {
                 m_coppTrapInitCfg[table_key] = fvs;
@@ -191,9 +221,10 @@ bool CoppMgr::isTrapIdDisabled(string trap_id)
     return true;
 }
 
-void CoppMgr::mergeConfig(CoppCfg &init_cfg, CoppCfg &m_cfg, std::vector<std::string> &cfg_keys, Table &cfgTable,
-std::vector<std::string> &prev_copp_keys)
+void CoppMgr::mergeConfig(CoppCfg &init_cfg, CoppCfg &m_cfg, std::vector<std::string> &cfg_keys, Table &cfgTable/*,
+std::vector<std::string> &prev_copp_keys*/)
 {
+    //CoppCfg helper;
     /* Read the init configuration first. If the same key is present in
      * user configuration, override the init fields with user fields
      */
@@ -233,11 +264,13 @@ std::vector<std::string> &prev_copp_keys)
             }
             if (!null_cfg)
             {
+                //helper[i.first] = merged_fvs;
                 m_cfg[i.first] = merged_fvs;
             }
         }
         else
         {
+            //helper[i.first] = init_cfg[i.first];
             m_cfg[i.first] = init_cfg[i.first];
         }
     }
@@ -251,59 +284,69 @@ std::vector<std::string> &prev_copp_keys)
         {
             std::vector<FieldValueTuple> cfg_fvs;
             cfgTable.get(i, cfg_fvs);
+            //helper[i] = cfg_fvs;
             m_cfg[i] = cfg_fvs;
         }
     }
 
-    for (auto it = m_cfg.begin(); it != m_cfg.end();)
+    /* Compare with the existing content of copp tables, in case values merged in helper map
+     * will be ignored as they are duplicates. In case the value in helper (merge of init and
+     * user config) will overwrie the copp table entries, current entry will be deleted from copp
+     * tables.
+     */
+    /*for (auto i : helper)
     {
-        std::vector<FieldValueTuple> upcoming_fvs = it->second;
-
-        auto key = std::find(prev_copp_keys.begin(), prev_copp_keys.end(), it->first);
+        std::vector<FieldValueTuple> temp_fvs = i.second;
+        std::vector<FieldValueTuple> new_fvs;
+        auto key = std::find(prev_copp_keys.begin(), prev_copp_keys.end(), i.first);
         if (key != prev_copp_keys.end())
         {
-            // key exists, check if overwrite or ignore
-            std::vector<FieldValueTuple> prev_fvs;
-            m_coppTable.get(it->first, prev_fvs);
-            bool differs = true;
-            for (auto it1: upcoming_fvs)
+            std::vector<FieldValueTuple> preserved_fvs;
+            m_coppTable.get(i.first, preserved_fvs);
+
+            for (auto it1: temp_fvs)
             {
-                for (auto it2: prev_fvs)
+                bool field_found = false;
+                bool overwrite = false;
+                for (auto it2: preserved_fvs)
                 {
-                    if(fvField(it1) == fvField(it2))
+                    if (fvField(it1) == fvField(it2))
                     {
+                        field_found = true;
+                        // note to self - is it possible to set part of key in copp tables?
+                        // as it is table of tables: value is 'fvs': field value.
+                        // it might be that if there is even one difference in the fvs I should
+                        // delete the whole entry and I can not set only some parts of it.
                         if (fvValue(it1) == fvValue(it2))
                         {
-                            differs = false;
+                            // duplicate -> ignore and continue to next key
                         }
                         else
                         {
-                            // TODO: add prints to understand if this is really overwrite
-                            m_coppTable.del(fvField(it1)); // delete for overwrite
+                            // overwrite -> delete preserved from copp table
+                            // and add helper fvs to m_cfg
+                            overwrite = true;
+                            m_coppTable.hdel(i.first, fvField(it1));
+                            new_fvs.push_back(it1);
                         }
-                        break;
+                        break; // field found -> advance it1
                     }
                 }
-                if (!differs)
+                if (!field_found || overwrite)
                 {
-                    break;
+                    new_fvs.push_back(it1);
                 }
             }
-
-            if (!differs)
+            if (!new_fvs.empty())
             {
-                m_cfg.erase(it++); // ignore since entry exists
-            }
-            else
-            {
-                ++it;
+                m_cfg[i.first] = new_fvs;
             }
         }
         else
         {
-            // key is not in preserved copp table insert - or actually do nothing
+            m_cfg[i.first] = helper[i.first];
         }
-    }
+    }*/
 }
 
 CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, const vector<string> &tableNames) :
@@ -321,7 +364,7 @@ CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, c
     std::vector<string> group_keys;
     std::vector<string> trap_keys;
     std::vector<string> feature_keys;
-    std::vector<string> prev_copp_keys;
+    //std::vector<string> prev_copp_keys;
 
     std::vector<string> group_cfg_keys;
     std::vector<string> trap_cfg_keys;
@@ -332,7 +375,7 @@ CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, c
     m_cfgCoppGroupTable.getKeys(group_cfg_keys);
     m_cfgCoppTrapTable.getKeys(trap_cfg_keys);
     m_cfgFeatureTable.getKeys(feature_keys);
-    m_coppTable.getKeys(prev_copp_keys);
+    //m_coppTable.getKeys(prev_copp_keys);
 
 
     for (auto i: feature_keys)
@@ -342,17 +385,19 @@ CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, c
         m_featuresCfgTable.emplace(i, feature_fvs);
     }
 
-    for (auto i : prev_copp_keys)
+    /*for (auto i : prev_copp_keys)
     {
+        SWSS_LOG_NOTICE("aryeh-3");
         auto it1 = std::find(group_cfg_keys.begin(), group_cfg_keys.end(), i);
         auto it2 = std::find(trap_cfg_keys.begin(), trap_cfg_keys.end(), i);
         if (it1 == group_cfg_keys.end() && it2 == trap_cfg_keys.end())
         {
             m_coppTable.del(i);
         }
-    }
+    }*/
 
-    mergeConfig(m_coppTrapInitCfg, trap_cfg, trap_cfg_keys, m_cfgCoppTrapTable, prev_copp_keys);
+    //mergeConfig(m_coppTrapInitCfg, trap_cfg, trap_cfg_keys, m_cfgCoppTrapTable, prev_copp_keys);
+    mergeConfig(m_coppTrapInitCfg, trap_cfg, trap_cfg_keys, m_cfgCoppTrapTable);
 
     for (auto i : trap_cfg)
     {
@@ -390,7 +435,8 @@ CoppMgr::CoppMgr(DBConnector *cfgDb, DBConnector *appDb, DBConnector *stateDb, c
         }
     }
 
-    mergeConfig(m_coppGroupInitCfg, group_cfg, group_cfg_keys, m_cfgCoppGroupTable, prev_copp_keys);
+    //mergeConfig(m_coppGroupInitCfg, group_cfg, group_cfg_keys, m_cfgCoppGroupTable, prev_copp_keys);
+    mergeConfig(m_coppGroupInitCfg, group_cfg, group_cfg_keys, m_cfgCoppGroupTable);
 
     for (auto i: group_cfg)
     {
