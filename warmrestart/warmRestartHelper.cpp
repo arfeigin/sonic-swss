@@ -86,7 +86,7 @@ bool WarmStartHelper::inProgress(void) const
     return (m_enabled && m_state != WarmStart::RECONCILED);
 }
 
-bool fastRestartInProgress(void) const
+bool WarmStartHelper::fastRestartInProgress(void) const
 {
     return WarmStart::checkFastReboot();
 }

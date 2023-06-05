@@ -21,8 +21,8 @@ using namespace swss;
 #define VRF_PREFIX              "Vrf"
 #define MGMT_VRF_PREFIX         "mgmt"
 
-#define IPV4_DEFAULT_ROUTE      "0.0.0.0/0"
-#define IPV6_DEFAULT_ROUTE      "::/0"
+#define IPV4_DEFAULT_GATEWAY      "0.0.0.0"
+#define IPV6_DEFAULT_GATEWAY      "::"
 
 #define NHG_DELIMITER ','
 
@@ -785,7 +785,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
         fvVector.push_back(wt);
     }
 
-    if (!warmRestartInProgress  || (fastRestartInProgress && isDefaultRoute(destipprefix)))
+    if (!warmRestartInProgress  || (fastRestartInProgress && isConnectedRoute(gw_list.c_str())))
     {
         m_routeTable.set(destipprefix, fvVector);
         SWSS_LOG_DEBUG("RouteTable set msg: %s %s %s %s", destipprefix,
@@ -809,12 +809,12 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
 }
 
 /* 
- * Check if given string route is IPV4/IPV6 default route
- * @arg route      route
+ * Check if given nexthop is default gateway.
+ * @arg nexthop      nexthop address
  */
-bool RouteSync::isDefaultRoute(char *route)
+bool RouteSync::isConnectedRoute(char *nexthop)
 {
-    return (!strcmp (route, IPV4_DEFAULT_ROUTE)) || (!strcmp (route, IPV6_DEFAULT_ROUTE));
+    return (!strcmp (route, IPV4_DEFAULT_GATEWAY)) || (!strcmp (route, IPV6_DEFAULT_GATEWAY));
 }
 
 /* 
