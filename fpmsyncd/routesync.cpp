@@ -21,6 +21,9 @@ using namespace swss;
 #define VRF_PREFIX              "Vrf"
 #define MGMT_VRF_PREFIX         "mgmt"
 
+#define IPV4_DEFAULT_ROUTE      "0.0.0.0/0"
+#define IPV6_DEFAULT_ROUTE      "::/0"
+
 #define NHG_DELIMITER ','
 
 #ifndef ETH_ALEN
@@ -659,6 +662,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
      * or we could opt to defer it if we are going through a warm-reboot cycle.
      */
     bool warmRestartInProgress = m_warmStartHelper.inProgress();
+    bool fastRestartInProgress = m_warmStartHelper.fastRestartInProgress();
 
     if (nlmsg_type == RTM_DELROUTE)
     {
@@ -781,7 +785,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
         fvVector.push_back(wt);
     }
 
-    if (!warmRestartInProgress)
+    if (!warmRestartInProgress  || (fastRestartInProgress && isDefaultRoute(destipprefix)))
     {
         m_routeTable.set(destipprefix, fvVector);
         SWSS_LOG_DEBUG("RouteTable set msg: %s %s %s %s", destipprefix,
@@ -802,6 +806,15 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
                                                            fvVector);
         m_warmStartHelper.insertRefreshMap(kfv);
     }
+}
+
+/* 
+ * Check if given string route is IPV4/IPV6 default route
+ * @arg route      route
+ */
+bool RouteSync::isDefaultRoute(char *route)
+{
+    return (!strcmp (route, IPV4_DEFAULT_ROUTE)) || (!strcmp (route, IPV6_DEFAULT_ROUTE));
 }
 
 /* 

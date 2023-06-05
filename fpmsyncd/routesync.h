@@ -87,6 +87,8 @@ private:
 
     /* Get next hop weights*/
     string getNextHopWt(struct rtnl_route *route_obj);
+
+    bool isDefaultRoute(char *route);
 };
 
 }
