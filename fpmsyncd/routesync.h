@@ -84,6 +84,8 @@ private:
     /* Handle regular route (include VRF route) */
     void onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf);
 
+    bool isDefaultRoute(char *route);
+
     /* Handle label route */
     void onLabelRouteMsg(int nlmsg_type, struct nl_object *obj);
 
