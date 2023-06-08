@@ -21,6 +21,9 @@ using namespace swss;
 #define VRF_PREFIX              "Vrf"
 #define MGMT_VRF_PREFIX         "mgmt"
 
+#define IPV4_DEFAULT_GATEWAY      "0.0.0.0"
+#define IPV6_DEFAULT_GATEWAY      "::"
+
 #define NHG_DELIMITER ','
 
 #ifndef ETH_ALEN
@@ -450,6 +453,7 @@ void RouteSync::onEvpnRouteMsg(struct nlmsghdr *h, int len)
         if (!warmRestartInProgress)
         {
             m_routeTable.del(destipprefix);
+            SWSS_LOG_NOTICE("afeigin2");
             return;
         }
         else
@@ -462,6 +466,7 @@ void RouteSync::onEvpnRouteMsg(struct nlmsghdr *h, int len)
                                                                DEL_COMMAND,
                                                                fvVector);
             m_warmStartHelper.insertRefreshMap(kfv);
+            SWSS_LOG_NOTICE("afeigin3");
             return;
         }
     }
@@ -659,12 +664,14 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
      * or we could opt to defer it if we are going through a warm-reboot cycle.
      */
     bool warmRestartInProgress = m_warmStartHelper.inProgress();
+    bool fastRestartInProgress = m_warmStartHelper.fastRestartInProgress();
 
     if (nlmsg_type == RTM_DELROUTE)
     {
         if (!warmRestartInProgress)
         {
             m_routeTable.del(destipprefix);
+            SWSS_LOG_NOTICE("afeigin5");
             return;
         }
         else
@@ -677,6 +684,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
                                                                DEL_COMMAND,
                                                                fvVector);
             m_warmStartHelper.insertRefreshMap(kfv);
+            SWSS_LOG_NOTICE("afeigin6, destipprefix: %s", destipprefix);
             return;
         }
     }
@@ -743,6 +751,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
             {
                 if (!warmRestartInProgress)
                 {
+                    SWSS_LOG_NOTICE("afeigin0");
                     SWSS_LOG_NOTICE("RouteTable del msg for route with only one nh on eth0/docker0: %s %s %s %s",
                             destipprefix, gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
 
@@ -750,6 +759,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
                 }
                 else
                 {
+                    SWSS_LOG_NOTICE("afeigin1, : %s %s %s %s", destipprefix, gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
                     SWSS_LOG_NOTICE("Warm-Restart mode: Receiving delete msg for route with only nh on eth0/docker0: %s %s %s %s",
                             destipprefix, gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
 
@@ -781,8 +791,14 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
         fvVector.push_back(wt);
     }
 
-    if (!warmRestartInProgress)
+    if (!warmRestartInProgress  || (fastRestartInProgress && isConnectedRoute(gw_list.c_str())))
     {
+        if (fastRestartInProgress && isConnectedRoute(gw_list.c_str()))
+        {
+            SWSS_LOG_NOTICE("aryehf");
+            SWSS_LOG_NOTICE("-----RouteTable set msg: %s %s %s %s", destipprefix,
+                       gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
+        }
         m_routeTable.set(destipprefix, fvVector);
         SWSS_LOG_DEBUG("RouteTable set msg: %s %s %s %s", destipprefix,
                        gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
@@ -802,6 +818,15 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
                                                            fvVector);
         m_warmStartHelper.insertRefreshMap(kfv);
     }
+}
+
+/* 
+ * Check if given nexthop is default gateway.
+ * @arg nexthop      nexthop address
+ */
+bool RouteSync::isConnectedRoute(const char *nexthop)
+{
+    return (!strcmp (nexthop, IPV4_DEFAULT_GATEWAY)) || (!strcmp (nexthop, IPV6_DEFAULT_GATEWAY));
 }
 
 /* 
