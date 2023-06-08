@@ -453,6 +453,7 @@ void RouteSync::onEvpnRouteMsg(struct nlmsghdr *h, int len)
         if (!warmRestartInProgress)
         {
             m_routeTable.del(destipprefix);
+            SWSS_LOG_NOTICE("afeigin2");
             return;
         }
         else
@@ -465,6 +466,7 @@ void RouteSync::onEvpnRouteMsg(struct nlmsghdr *h, int len)
                                                                DEL_COMMAND,
                                                                fvVector);
             m_warmStartHelper.insertRefreshMap(kfv);
+            SWSS_LOG_NOTICE("afeigin3");
             return;
         }
     }
@@ -669,6 +671,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
         if (!warmRestartInProgress)
         {
             m_routeTable.del(destipprefix);
+            SWSS_LOG_NOTICE("afeigin5");
             return;
         }
         else
@@ -681,6 +684,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
                                                                DEL_COMMAND,
                                                                fvVector);
             m_warmStartHelper.insertRefreshMap(kfv);
+            SWSS_LOG_NOTICE("afeigin6, destipprefix: %s", destipprefix);
             return;
         }
     }
@@ -747,6 +751,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
             {
                 if (!warmRestartInProgress)
                 {
+                    SWSS_LOG_NOTICE("afeigin0");
                     SWSS_LOG_NOTICE("RouteTable del msg for route with only one nh on eth0/docker0: %s %s %s %s",
                             destipprefix, gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
 
@@ -754,6 +759,7 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
                 }
                 else
                 {
+                    SWSS_LOG_NOTICE("afeigin1, : %s %s %s %s", destipprefix, gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
                     SWSS_LOG_NOTICE("Warm-Restart mode: Receiving delete msg for route with only nh on eth0/docker0: %s %s %s %s",
                             destipprefix, gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
 
@@ -787,6 +793,12 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
 
     if (!warmRestartInProgress  || (fastRestartInProgress && isConnectedRoute(gw_list.c_str())))
     {
+        if (fastRestartInProgress && isConnectedRoute(gw_list.c_str()))
+        {
+            SWSS_LOG_NOTICE("aryehf");
+            SWSS_LOG_NOTICE("-----RouteTable set msg: %s %s %s %s", destipprefix,
+                       gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
+        }
         m_routeTable.set(destipprefix, fvVector);
         SWSS_LOG_DEBUG("RouteTable set msg: %s %s %s %s", destipprefix,
                        gw_list.c_str(), intf_list.c_str(), mpls_list.c_str());
