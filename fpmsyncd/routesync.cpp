@@ -812,9 +812,9 @@ void RouteSync::onRouteMsg(int nlmsg_type, struct nl_object *obj, char *vrf)
  * Check if given nexthop is default gateway.
  * @arg nexthop      nexthop address
  */
-bool RouteSync::isConnectedRoute(char *nexthop)
+bool RouteSync::isConnectedRoute(const char *nexthop)
 {
-    return (!strcmp (route, IPV4_DEFAULT_GATEWAY)) || (!strcmp (route, IPV6_DEFAULT_GATEWAY));
+    return (!strcmp (nexthop, IPV4_DEFAULT_GATEWAY)) || (!strcmp (nexthop, IPV6_DEFAULT_GATEWAY));
 }
 
 /* 

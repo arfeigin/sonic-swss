@@ -88,7 +88,7 @@ private:
     /* Get next hop weights*/
     string getNextHopWt(struct rtnl_route *route_obj);
 
-    bool isConnectedRoute(char *nexthop);
+    bool isConnectedRoute(const char *nexthop);
 };
 
 }
