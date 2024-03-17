@@ -7,6 +7,7 @@
 #include "dbconnector.h"
 #include "producerstatetable.h"
 #include "orch.h"
+#include <net/if.h>
 
 using namespace std;
 
@@ -37,6 +38,7 @@ private:
     bool doVrfVxlanTableUpdate(const string& vrf_name, const string& vni, bool add);
     void VrfVxlanTableSync(bool add);
     void doTask(Consumer &consumer);
+    bool isVrefNameLenOk(const std::string &vrfName);
 
     std::map<std::string, uint32_t> m_vrfTableMap;
     std::set<uint32_t> m_freeTables;

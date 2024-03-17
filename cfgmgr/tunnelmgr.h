@@ -5,6 +5,7 @@
 #include "orch.h"
 
 #include <set>
+#include <net/if.h>
 
 namespace swss {
 
@@ -31,6 +32,8 @@ private:
     bool configIpTunnel(const TunnelInfo& info);
 
     void finalizeWarmReboot();
+
+    bool isLoopbackIfaceNameLenOk(const std::string &alias);
 
     ProducerStateTable m_appIpInIpTunnelTable;
     Table m_cfgPeerTable;

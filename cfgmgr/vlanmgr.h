@@ -8,6 +8,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <net/if.h>
 
 namespace swss {
 
@@ -43,6 +44,8 @@ private:
     bool isVlanStateOk(const std::string &alias);
     bool isVlanMacOk();
     bool isVlanMemberStateOk(const std::string &vlanMemberKey);
+    bool isVlanIfaceNameLenOk(const std::string &alias);
+    bool isVlanIfaceNameValid(const std::string &alias);
 };
 
 }

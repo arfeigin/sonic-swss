@@ -84,6 +84,18 @@ bool TeamMgr::isPortStateOk(const string &alias)
     return true;
 }
 
+bool TeamMgr::isLagIfaceNameLenOk(const string &alias)
+{
+    SWSS_LOG_ENTER();
+
+    if (alias.length() >= IFNAMSIZ)
+    {
+        SWSS_LOG_ERROR("Invalid interface name %s length, it must not exceed %zu characters", alias.c_str(), IFNAMSIZ);
+        return false;
+    }
+    return true;
+}
+
 bool TeamMgr::isLagStateOk(const string &alias)
 {
     SWSS_LOG_ENTER();
@@ -257,6 +269,12 @@ void TeamMgr::doLagTask(Consumer &consumer)
             string mtu = DEFAULT_MTU_STR;
             string learn_mode;
             string tpid;
+            
+            if (isLagIfaceNameLenOk(alias))
+            {
+                it++;
+                continue;
+            }
 
             for (auto i : kfvFieldsValues(t))
             {
@@ -359,6 +377,11 @@ void TeamMgr::doLagMemberTask(Consumer &consumer)
 
         if (op == SET_COMMAND)
         {
+            if (!isLagIfaceNameLenOk(member))
+            {
+                it++;
+                continue;
+            }
             if (!isPortStateOk(member) || !isLagStateOk(lag))
             {
                 it++;
@@ -369,6 +392,7 @@ void TeamMgr::doLagMemberTask(Consumer &consumer)
                 it++;
                 continue;
             }
+            // validate portchannel member name length, or maybe validate elsewhere
             if (addLagMember(lag, member) == task_need_retry)
             {
                 it++;

@@ -8,6 +8,7 @@
 #include "orch.h"
 #include "producerstatetable.h"
 #include <sys/types.h>
+#include <net/if.h>
 
 namespace swss {
 
@@ -58,6 +59,7 @@ private:
     bool isLagStateOk(const std::string&);
     bool isMACsecAttached(const std::string &);
     bool isMACsecIngressSAOk(const std::string &);
+    bool isLagIfaceNameLenOk(const std::string &);
     uint16_t generateLacpKey(const std::string&);
 };
 

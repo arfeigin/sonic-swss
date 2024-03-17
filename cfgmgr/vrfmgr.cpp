@@ -214,6 +214,16 @@ bool VrfMgr::isVrfObjExist(const string& vrfName)
     return false;
 }
 
+bool VrfMgr::isVrefNameLenOk(const string& vrfName)
+{
+    if (vrfName.length() >= IFNAMSIZ)
+    {
+        SWSS_LOG_ERROR("Invalid VRF interface name %s length, it must not exceed %zu characters", vrfName.c_str(), IFNAMSIZ);
+        return false;
+    }
+    return true;
+}
+
 void VrfMgr::doTask(Consumer &consumer)
 {
     SWSS_LOG_ENTER();
@@ -282,30 +292,32 @@ void VrfMgr::doTask(Consumer &consumer)
                 {
                     SWSS_LOG_ERROR("Failed to create vrf netdev %s", vrfName.c_str());
                 }
-
-                bool status = true;
-                vector<FieldValueTuple> fvVector;
-                fvVector.emplace_back("state", "ok");
-                m_stateVrfTable.set(vrfName, fvVector);
-
-                SWSS_LOG_NOTICE("Created vrf netdev %s", vrfName.c_str());
-                if ((consumer.getTableName() == CFG_VRF_TABLE_NAME) ||
-                    (consumer.getTableName() == CFG_MGMT_VRF_CONFIG_TABLE_NAME))
+                if (isVrefNameLenOk(vrfName))
                 {
-                    status  = doVrfVxlanTableCreateTask (t);
-                    if (status == false)
+                    bool status = true;
+                    vector<FieldValueTuple> fvVector;
+                    fvVector.emplace_back("state", "ok");
+                    m_stateVrfTable.set(vrfName, fvVector);
+
+                    SWSS_LOG_NOTICE("Created vrf netdev %s", vrfName.c_str());
+                    if ((consumer.getTableName() == CFG_VRF_TABLE_NAME) || 
+                        (consumer.getTableName() == CFG_MGMT_VRF_CONFIG_TABLE_NAME))
                     {
-                        SWSS_LOG_ERROR("VRF VNI Map Config Failed");
-                        it = consumer.m_toSync.erase(it);
-                        continue;
+                        status  = doVrfVxlanTableCreateTask (t);
+                        if (status == false)
+                        {
+                            SWSS_LOG_ERROR("VRF VNI Map Config Failed");
+                            it = consumer.m_toSync.erase(it);
+                            continue;
+                        }
+
+                        m_appVrfTableProducer.set(vrfName, kfvFieldsValues(t));
+
                     }
-
-                    m_appVrfTableProducer.set(vrfName, kfvFieldsValues(t));
-
-                }
-                else
-                {
-                    m_appVnetTableProducer.set(vrfName, kfvFieldsValues(t));
+                    else
+                    {
+                        m_appVnetTableProducer.set(vrfName, kfvFieldsValues(t));
+                    }
                 }
             }
         }

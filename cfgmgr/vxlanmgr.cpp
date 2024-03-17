@@ -215,25 +215,33 @@ void VxlanMgr::doTask(Consumer &consumer)
 
         if (op == SET_COMMAND)
         {
-            if (table_name == CFG_VNET_TABLE_NAME)
+            std::string & alias = kfvKey(t);
+            if (alias.length() >= IFNAMSIZ)
             {
-                task_result = doVxlanCreateTask(t);
-            }
-            else if (table_name == CFG_VXLAN_TUNNEL_TABLE_NAME)
-            {
-                task_result = doVxlanTunnelCreateTask(t);
-            }
-            else if (table_name == CFG_VXLAN_TUNNEL_MAP_TABLE_NAME)
-            {
-                task_result = doVxlanTunnelMapCreateTask(t);
-            }
-            else if (table_name == CFG_VXLAN_EVPN_NVO_TABLE_NAME)
-            {
-                task_result = doVxlanEvpnNvoCreateTask(t);
+                SWSS_LOG_ERROR("Invalid interface name %s length, it must not exceed %zu characters", name.c_str(), IFNAMSIZ);
             }
             else
             {
-                SWSS_LOG_ERROR("Unknown table : %s", table_name.c_str());
+                if (table_name == CFG_VNET_TABLE_NAME)
+                {
+                    task_result = doVxlanCreateTask(t);
+                }
+                else if (table_name == CFG_VXLAN_TUNNEL_TABLE_NAME)
+                {
+                    task_result = doVxlanTunnelCreateTask(t);
+                }
+                else if (table_name == CFG_VXLAN_TUNNEL_MAP_TABLE_NAME)
+                {
+                    task_result = doVxlanTunnelMapCreateTask(t);
+                }
+                else if (table_name == CFG_VXLAN_EVPN_NVO_TABLE_NAME)
+                {
+                    task_result = doVxlanEvpnNvoCreateTask(t);
+                }
+                else
+                {
+                    SWSS_LOG_ERROR("Unknown table : %s", table_name.c_str());
+                }
             }
         }
         else if (op == DEL_COMMAND)

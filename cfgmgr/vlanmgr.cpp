@@ -293,10 +293,9 @@ void VlanMgr::doVlanTask(Consumer &consumer)
 
         string key = kfvKey(t);
 
-        /* Ensure the key starts with "Vlan" otherwise ignore */
-        if (strncmp(key.c_str(), VLAN_PREFIX, 4))
+        /* Ensure the key starts with "Vlan" and name length doesn't exceed limit otherwise ignore */
+        if (!isVlanIfaceNameValid(key) || !isVlanIfaceNameLenOk(key))
         {
-            SWSS_LOG_ERROR("Invalid key format. No 'Vlan' prefix: %s", key.c_str());
             it = consumer.m_toSync.erase(it);
             continue;
         }
@@ -495,6 +494,27 @@ bool VlanMgr::isVlanStateOk(const string &alias)
     return false;
 }
 
+bool VlanMgr::isVlanIfaceNameLenOk(const string &alias)
+{
+    if (alias.length() >= IFNAMSIZ)
+    {
+        SWSS_LOG_ERROR("Invalid interface name %s length, it must not exceed %zu characters", alias.c_str(), IFNAMSIZ);
+        return false;
+    }
+    return true;
+}
+
+bool VlanMgr::isVlanIfaceNameValid(const string &alias)
+{
+    /* Ensure the vlan interface name starts with "Vlan" */
+    if (strncmp(alias.c_str(), VLAN_PREFIX, 4))
+    {
+        SWSS_LOG_ERROR("Invalid key format. No 'Vlan' prefix: %s", alias.c_str());
+        return false;
+    }
+    return true;
+}
+
 bool VlanMgr::isVlanMemberStateOk(const string &vlanMemberKey)
 {
     vector<FieldValueTuple> temp;
@@ -564,10 +584,9 @@ void VlanMgr::doVlanMemberTask(Consumer &consumer)
 
         string key = kfvKey(t);
 
-        /* Ensure the key starts with "Vlan" otherwise ignore */
-        if (strncmp(key.c_str(), VLAN_PREFIX, 4))
+        /* Ensure the key starts with "Vlan" and name length doesn't exceed limit otherwise ignore */
+        if (!isVlanIfaceNameValid(key) || !isVlanIfaceNameLenOk(key))
         {
-            SWSS_LOG_ERROR("Invalid key format. No 'Vlan' prefix: %s", key.c_str());
             it = consumer.m_toSync.erase(it);
             continue;
         }

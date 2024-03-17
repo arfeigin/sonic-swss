@@ -292,6 +292,16 @@ bool TunnelMgr::doTunnelTask(const KeyOpFieldsValuesTuple & t)
     return true;
 }
 
+bool TunnelMgr::isLoopbackIfaceNameLenOk(const string &alias)
+{
+    if (alias.length() >= IFNAMSIZ)
+    {
+        SWSS_LOG_ERROR("Invalid loopback interface name %s length, it must not exceed %zu characters", alias.c_str(), IFNAMSIZ);
+        return false;
+    }
+    return true;
+}
+
 bool TunnelMgr::doLpbkIntfTask(const KeyOpFieldsValuesTuple & t)
 {
     SWSS_LOG_ENTER();
@@ -304,10 +314,16 @@ bool TunnelMgr::doLpbkIntfTask(const KeyOpFieldsValuesTuple & t)
         return true;
     }
 
+    // validate alias (loopback) iface name length
     string alias(keys[0]);
     IpPrefix ipPrefix(keys[1]);
 
     m_intfCache[alias] = ipPrefix;
+    
+    if (!isLoopbackIfaceNameLenOk(alias))
+    {
+        return false;
+    }
 
     if (alias == LOOPBACK_SRC && !m_tunnelCache.empty())
     {
