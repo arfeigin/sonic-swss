@@ -48,6 +48,8 @@ class WarmStartHelper {
 
     bool inProgress(void) const;
 
+    bool fastRestartInProgress(void) const;
+
     uint32_t getRestartTimer(void) const;
 
     bool runRestoration(void);
