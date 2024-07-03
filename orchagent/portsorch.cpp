@@ -5394,6 +5394,10 @@ bool PortsOrch::initializePort(Port &port)
         SWSS_LOG_ERROR("Failed to get initial port admin speed %d", port.m_speed);
         return false;
     }
+    else
+    {
+        SWSS_LOG_NOTICE("Initializing port :%s speed:%d", port.m_alias.c_str(), port.m_speed);
+    }
 
     /* initialize port mtu */
     if (!getPortMtu(port, port.m_mtu))
