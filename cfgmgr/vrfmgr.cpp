@@ -3,6 +3,7 @@
 #include "dbconnector.h"
 #include "producerstatetable.h"
 #include "tokenize.h"
+#include "interface.h"
 #include "ipprefix.h"
 #include "vrfmgr.h"
 #include "exec.h"
@@ -281,6 +282,12 @@ void VrfMgr::doTask(Consumer &consumer)
                 if (!setLink(vrfName))
                 {
                     SWSS_LOG_ERROR("Failed to create vrf netdev %s", vrfName.c_str());
+                }
+
+                if (!isInterfaceNameLenOk(vrfName))
+                {
+                    it = consumer.m_toSync.erase(it);
+                    continue;
                 }
 
                 bool status = true;

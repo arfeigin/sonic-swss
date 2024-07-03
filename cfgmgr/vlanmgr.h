@@ -43,6 +43,7 @@ private:
     bool isVlanStateOk(const std::string &alias);
     bool isVlanMacOk();
     bool isVlanMemberStateOk(const std::string &vlanMemberKey);
+    bool isVlanIfaceNameValid(const std::string &alias);
 };
 
 }
