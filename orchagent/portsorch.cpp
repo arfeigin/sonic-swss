@@ -3200,7 +3200,6 @@ bool PortsOrch::initPort(const PortConfig &port)
 
             p.m_index = index;
             p.m_port_id = id;
-            SWSS_LOG_NOTICE("---afeigin0 port speed from args = %d", port.speed.value);
 
             /* Initialize the port and create corresponding host interface */
             if (initializePort(p))
@@ -3208,7 +3207,7 @@ bool PortsOrch::initPort(const PortConfig &port)
                 /* Create associated Gearbox lane mapping */
                 initGearboxPort(p);
 
-                SWSS_LOG_NOTICE("---afeigin1 port speed from args = %d", p.m_speed);
+                p.m_speed = port.speed.value;
 
                 /* Add port to port list */
                 m_portList[alias] = p;
