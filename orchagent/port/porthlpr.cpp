@@ -321,11 +321,6 @@ bool PortHelper::parsePortSpeed(PortConfig &port, const std::string &field, cons
     {
         port.speed.value = to_uint<std::uint32_t>(value);
         port.speed.is_set = true;
-        if (port.alias.value == "Ethernet0" || port.alias.value == "Ethernet504")
-        SWSS_LOG_NOTICE(
-                            "afeigin: in ParsePortSpeed for port %s parsed speed is %u (called initially from doPortTask)",
-                            field.c_str(), port.speed.value
-                        );
     }
     catch (const std::exception &e)
     {

@@ -3200,12 +3200,15 @@ bool PortsOrch::initPort(const PortConfig &port)
 
             p.m_index = index;
             p.m_port_id = id;
+            SWSS_LOG_NOTICE("---afeigin0 port speed from args = %d", port.speed.value);
 
             /* Initialize the port and create corresponding host interface */
             if (initializePort(p))
             {
                 /* Create associated Gearbox lane mapping */
                 initGearboxPort(p);
+
+                SWSS_LOG_NOTICE("---afeigin1 port speed from args = %d", p.m_speed);
 
                 /* Add port to port list */
                 m_portList[alias] = p;
@@ -5393,10 +5396,6 @@ bool PortsOrch::initializePort(Port &port)
     {
         SWSS_LOG_ERROR("Failed to get initial port admin speed %d", port.m_speed);
         return false;
-    }
-    else
-    {
-        SWSS_LOG_NOTICE("Initializing port :%s speed:%d", port.m_alias.c_str(), port.m_speed);
     }
 
     /* initialize port mtu */
