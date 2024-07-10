@@ -5396,11 +5396,12 @@ bool PortsOrch::initializePort(Port &port)
     }
 
     /* initialize port admin speed */
+    /* moved to initport
     if (!isAutoNegEnabled(port.m_port_id) && !getPortSpeed(port.m_port_id, port.m_speed))
     {
         SWSS_LOG_ERROR("Failed to get initial port admin speed %d", port.m_speed);
         return false;
-    }
+    }*/
 
     /* initialize port mtu */
     if (!getPortMtu(port, port.m_mtu))
