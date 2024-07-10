@@ -3201,13 +3201,18 @@ bool PortsOrch::initPort(const PortConfig &port)
             p.m_index = index;
             p.m_port_id = id;
 
+            /* Initialize port speed according to what was configured in port init profile */
+            p.m_autoneg = port.autoneg.value;
+            if (!p.m_autoneg)
+            {
+                p.m_speed = port.speed.value;
+            }
+
             /* Initialize the port and create corresponding host interface */
             if (initializePort(p))
             {
                 /* Create associated Gearbox lane mapping */
                 initGearboxPort(p);
-
-                p.m_speed = port.speed.value;
 
                 /* Add port to port list */
                 m_portList[alias] = p;

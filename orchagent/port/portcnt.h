@@ -48,7 +48,7 @@ public:
     } speed; // Port speed
 
     struct {
-        bool value;
+        bool value = false;
         bool is_set = false;
     } autoneg; // Port autoneg
 
