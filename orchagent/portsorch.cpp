@@ -3212,7 +3212,10 @@ bool PortsOrch::initPort(const PortConfig &port)
             if (initializePort(p))
             {
                 /* Create associated Gearbox lane mapping */
-                initGearboxPort(p);
+                if (m_gearboxEnabled)
+                {
+                    initGearboxPort(p);
+                }
 
                 /* Add port to port list */
                 m_portList[alias] = p;
