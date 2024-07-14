@@ -3207,6 +3207,7 @@ bool PortsOrch::initPort(const PortConfig &port)
             {
                 p.m_speed = port.speed.value;
             }
+            p.m_fec_mode = port.fec.value;
 
             /* Initialize the port and create corresponding host interface */
             if (initializePort(p))
