@@ -1510,7 +1510,11 @@ bool PortsOrch::setPortAdminStatus(Port &port, bool state)
         }
     }
 
-    bool gbstatus = setGearboxPortsAttr(port, SAI_PORT_ATTR_ADMIN_STATE, &state);
+    bool gbstatus = true;
+    if (m_gearboxEnabled)
+    {
+        gbstatus = setGearboxPortsAttr(port, SAI_PORT_ATTR_ADMIN_STATE, &state);
+    }
     if (gbstatus != true && !m_cmisModuleAsicSyncSupported)
     {
         setHostTxReady(port, "false");
@@ -1710,7 +1714,10 @@ bool PortsOrch::setPortFec(Port &port, sai_port_fec_mode_t fec_mode, bool overri
     {
         return false;
     }
-    setGearboxPortsAttr(port, SAI_PORT_ATTR_FEC_MODE, &fec_mode, override_fec);
+    if (m_gearboxEnabled)
+    {
+        setGearboxPortsAttr(port, SAI_PORT_ATTR_FEC_MODE, &fec_mode, override_fec);
+    }
 
     SWSS_LOG_NOTICE("Set port %s FEC mode %d", port.m_alias.c_str(), fec_mode);
 
@@ -2387,7 +2394,10 @@ bool PortsOrch::isSpeedSupported(const std::string& alias, sai_object_id_t port_
     // This method will return false iff we get a list of supported speeds and the requested speed
     // is not supported
     // Otherwise the method will return true (even if we received errors)
-    initPortSupportedSpeeds(alias, port_id);
+    if (!m_portSupportedSpeeds.count(port_id))
+    {
+        initPortSupportedSpeeds(alias, port_id);
+    }
 
     const auto &supp_speeds = m_portSupportedSpeeds[port_id];
     if (supp_speeds.empty())
@@ -2504,7 +2514,11 @@ void PortsOrch::initPortCapLinkTraining(Port &port)
 
 bool PortsOrch::isFecModeSupported(const Port &port, sai_port_fec_mode_t fec_mode)
 {
-    initPortSupportedFecModes(port.m_alias, port.m_port_id);
+    // If port supported speeds map already contains the information, save the SAI call
+    if (m_portSupportedFecModes.count(port_id) <= 0)
+    {
+        initPortSupportedFecModes(port.m_alias, port.m_port_id);
+    }
 
     const auto &obj = m_portSupportedFecModes.at(port.m_port_id);
 
@@ -2752,8 +2766,11 @@ task_process_status PortsOrch::setPortSpeed(Port &port, sai_uint32_t speed)
     {
         return handleSaiSetStatus(SAI_API_PORT, status);
     }
+    if (m_gearboxEnabled)
+    {
+        setGearboxPortsAttr(port, SAI_PORT_ATTR_SPEED, &speed);
+    }
 
-    setGearboxPortsAttr(port, SAI_PORT_ATTR_SPEED, &speed);
     return task_success;
 }
 
@@ -3902,8 +3919,11 @@ void PortsOrch::doPortTask(Consumer &consumer)
                     }
                     else
                     {
-                        /* Always update Gearbox speed on Gearbox ports */
-                        setGearboxPortsAttr(p, SAI_PORT_ATTR_SPEED, &pCfg.speed.value);
+                        if (m_gearboxEnabled)
+                        {
+                            /* Always update Gearbox speed on Gearbox ports */
+                            setGearboxPortsAttr(p, SAI_PORT_ATTR_SPEED, &pCfg.speed.value);
+                        }
                     }
                 }
 
