@@ -2515,7 +2515,7 @@ void PortsOrch::initPortCapLinkTraining(Port &port)
 bool PortsOrch::isFecModeSupported(const Port &port, sai_port_fec_mode_t fec_mode)
 {
     // If port supported speeds map already contains the information, save the SAI call
-    if (m_portSupportedFecModes.count(port_id) <= 0)
+    if (m_portSupportedFecModes.count(port.m_port_id) <= 0)
     {
         initPortSupportedFecModes(port.m_alias, port.m_port_id);
     }
