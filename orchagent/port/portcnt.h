@@ -198,11 +198,6 @@ public:
     } admin_status; // Port admin status
 
     struct {
-        bool value;
-        bool is_set = false;
-    } oper_status; // Port oper status
-
-    struct {
         std::string value;
         bool is_set = false;
     } description; // Port description

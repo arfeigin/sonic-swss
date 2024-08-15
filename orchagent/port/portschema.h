@@ -85,6 +85,5 @@
 #define PORT_REGN_BFM1N          "regn_bfm1n"
 #define PORT_ROLE                "role"
 #define PORT_ADMIN_STATUS        "admin_status"
-#define PORT_OPER_STATUS         "oper_status"
 #define PORT_DESCRIPTION         "description"
 #define PORT_SUBPORT             "subport"

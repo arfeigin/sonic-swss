@@ -738,29 +738,6 @@ bool PortHelper::parsePortAdminStatus(PortConfig &port, const std::string &field
     return true;
 }
 
-bool PortHelper::parsePortOperStatus(PortConfig &port, const std::string &field, const std::string &value) const
-{
-    SWSS_LOG_ENTER();
-
-    if (value.empty())
-    {
-        SWSS_LOG_ERROR("Failed to parse field(%s): empty value is prohibited", field.c_str());
-        return false;
-    }
-
-    const auto &cit = portStatusMap.find(value);
-    if (cit == portStatusMap.cend())
-    {
-        SWSS_LOG_ERROR("Failed to parse field(%s): invalid value(%s)", field.c_str(), value.c_str());
-        return false;
-    }
-
-    port.oper_status.value = cit->second;
-    port.oper_status.is_set = true;
-
-    return true;
-}
-
 bool PortHelper::parsePortDescription(PortConfig &port, const std::string &field, const std::string &value) const
 {
     SWSS_LOG_ENTER();
@@ -863,20 +840,6 @@ bool PortHelper::parsePortConfig(PortConfig &port) const
         else if (field == PORT_FEC)
         {
             if (!this->parsePortFec(port, field, value))
-            {
-                return false;
-            }
-        }
-        else if (field == PORT_ADMIN_STATUS)
-        {
-            if (!this->parsePortAdminStatus(port, field, value))
-            {
-                return false;
-            }
-        }
-        else if (field == PORT_OPER_STATUS)
-        {
-            if (!this->parsePortOperStatus(port, field, value))
             {
                 return false;
             }
@@ -1038,6 +1001,13 @@ bool PortHelper::parsePortConfig(PortConfig &port) const
         else if (field == PORT_ROLE)
         {
             if (!this->parsePortRole(port, field, value))
+            {
+                return false;
+            }
+        }
+        else if (field == PORT_ADMIN_STATUS)
+        {
+            if (!this->parsePortAdminStatus(port, field, value))
             {
                 return false;
             }
