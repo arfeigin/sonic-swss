@@ -868,9 +868,10 @@ task_process_status BufferOrch::processQueuesBulk(KeyOpFieldsValuesTuple &tuple)
     }
     auto queueCount = static_cast<std::uint32_t>(queueIdList.size());
     std::vector<sai_status_t> statusList(queueCount, SAI_STATUS_SUCCESS);
+    std::vector<sai_attribute_t> attrList(queueCount, attr);
 
     auto status = sai_queue_api->set_queues_attribute(
-        queueCount, queueIdList.data(), &attr,
+        queueCount, queueIdList.data(), attrList.data(),
         SAI_BULK_OP_ERROR_MODE_IGNORE_ERROR, statusList.data()
     );
 
@@ -1275,9 +1276,10 @@ task_process_status BufferOrch::processPriorityGroupsBulk(KeyOpFieldsValuesTuple
 
     auto pgCount = static_cast<std::uint32_t>(pgIdList.size());
     std::vector<sai_status_t> statusList(pgCount, SAI_STATUS_SUCCESS);
+    std::vector<sai_attribute_t> attrList(pgCount, attr);
 
     auto status = sai_buffer_api->set_ingress_priority_groups_attribute(
-        pgCount, pgIdList.data(), &attr,
+        pgCount, pgIdList.data(), attrList.data(),
         SAI_BULK_OP_ERROR_MODE_IGNORE_ERROR, statusList.data()
     );
 

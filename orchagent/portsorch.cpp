@@ -1005,6 +1005,7 @@ bool PortsOrch::setPortAdminStatusBulk(const std::vector<PortConfig> &portList)
 
     auto portCount = static_cast<std::uint32_t>(portList.size());
     std::vector<sai_status_t> statusList(portCount, SAI_STATUS_SUCCESS);
+    std::vector<sai_attribute_t> attrList(portCount, attr);
     std::vector<sai_object_id_t> oidList;
     for (std::uint32_t i = 0; i < portCount; i++)
     {
@@ -1012,7 +1013,7 @@ bool PortsOrch::setPortAdminStatusBulk(const std::vector<PortConfig> &portList)
     }
 
     auto status = sai_port_api->set_ports_attribute(
-        portCount, oidList.data(), &attr,
+        portCount, oidList.data(), attrList.data(),
         SAI_BULK_OP_ERROR_MODE_IGNORE_ERROR, statusList.data()
     );
     if (status != SAI_STATUS_SUCCESS)
