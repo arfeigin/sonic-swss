@@ -534,5 +534,6 @@ private:
 
     // Port OA helper
     PortHelper m_portHlpr;
+    bool m_portsAdminUpSet = false;
 };
 #endif /* SWSS_PORTSORCH_H */

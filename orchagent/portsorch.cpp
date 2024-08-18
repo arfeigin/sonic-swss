@@ -3649,7 +3649,11 @@ void PortsOrch::doPortTask(Consumer &consumer)
     auto &taskMap = consumer.m_toSync;
     auto it = taskMap.begin();
 
-    std::vector<PortConfig> portsToAddList;
+    std::vector<PortConfig> portsToAdminUp;
+    if (m_portsAdminUpSet)
+    {
+        portsToAdminUp.clear();
+    }
 
     while (it != taskMap.end())
     {
@@ -3789,6 +3793,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
              */
             if (getPortConfigState() != PORT_CONFIG_MISSING)
             {
+                std::vector<PortConfig> portsToAddList;
                 std::vector<sai_object_id_t> portsToRemoveList;
 
                 // Port remove comparison logic
@@ -3855,6 +3860,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
                         initPortSupportedSpeeds(cit.key, m_portListLaneMap[cit.lanes.value]);
                         initPortSupportedFecModes(cit.key, m_portListLaneMap[cit.lanes.value]);
                     }
+                    portsToAdminUp.insert(portsToAdminUp.end(), portsToAddList.begin(), portsToAddList.end());
                 }
 
                 setPortConfigState(PORT_CONFIG_DONE);
@@ -4488,7 +4494,11 @@ void PortsOrch::doPortTask(Consumer &consumer)
                     }
                 }*/
             }
-            setPortAdminStatusBulk(portsToAddList);
+            if (!portsToAdminUp.empty() && !m_portsAdminUpSet)
+            {
+                setPortAdminStatusBulk(portsToAdminUp);
+                m_portsAdminUpSet = true;
+            }
         }
         else if (op == DEL_COMMAND)
         {
