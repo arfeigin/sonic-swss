@@ -882,6 +882,21 @@ bool PortsOrch::addPortBulk(const std::vector<PortConfig> &portList)
             attr.id = SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_MODE;
             attr.value.s32 = cit.pfc_asym.value;
             attrList.push_back(attr);
+            if (cit.pfc_asym.value == SAI_PORT_PRIORITY_FLOW_CONTROL_MODE_SEPARATE)
+            {
+                attr.id = SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_TX;
+                attr.value.u8 = static_cast<uint8_t>(cit.pfc_asym.value);
+                attrList.push_back(attr);
+                attr.id = SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_RX;
+                attr.value.u8 = static_cast<uint8_t>(0xff);
+                attrList.push_back(attr);
+            }
+            else
+            {
+                attr.id = SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL;
+                attr.value.u8 = static_cast<uint8_t>(cit.pfc_asym.value);
+                attrList.push_back(attr);
+            }
         }
 
         if (cit.tpid.is_set)
@@ -914,17 +929,6 @@ bool PortsOrch::addPortBulk(const std::vector<PortConfig> &portList)
             attr.value.s32 = cit.interface_type.value;
             attrList.push_back(attr);
         }
-
-        /*
-        if (cit.adv_interface_types.is_set)
-        {
-            attr.id = SAI_PORT_ATTR_ADVERTISED_INTERFACE_TYPE;
-            std::vector<std::int32_t> interfaceTypeList(
-                cit.adv_interface_types.value.begin(), cit.adv_interface_types.value.end());
-            attr.value.s32 = interfaceTypeList.data();
-            attr.value.s32list.count = static_cast<std::uint32_t>(interfaceTypeList.size());
-            attrList.push_back(attr);
-        }*/
 
         attrDataList.push_back(attrList);
         attrCountList.push_back(static_cast<std::uint32_t>(attrDataList.back().size()));
@@ -4186,7 +4190,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
                             p.m_alias.c_str(), m_portHlpr.getPortInterfaceTypeStr(pCfg).c_str()
                         );
                     }
-                }
+                }*/
 
                 if (pCfg.adv_interface_types.is_set)
                 {
@@ -4236,7 +4240,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
                             p.m_alias.c_str(), m_portHlpr.getAdvInterfaceTypesStr(pCfg).c_str()
                         );
                     }
-                }
+                }/*
 
                 if (pCfg.mtu.is_set)
                 {
@@ -4358,7 +4362,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
                             p.m_alias.c_str(), m_portHlpr.getFecStr(pCfg).c_str()
                         );
                     }
-                }
+                }*/
 
                 if (pCfg.learn_mode.is_set)
                 {
@@ -4385,7 +4389,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
                     }
                 }
 
-                if (pCfg.pfc_asym.is_set)
+                /*if (pCfg.pfc_asym.is_set)
                 {
                     if (!p.m_pfc_asym_cfg || p.m_pfc_asym != pCfg.pfc_asym.value)
                     {
