@@ -870,6 +870,66 @@ bool PortsOrch::addPortBulk(const std::vector<PortConfig> &portList)
             attrList.push_back(attr);
         }
 
+        if (cit.mtu.is_set)
+        {
+            attr.id = SAI_PORT_ATTR_MTU;
+            attr.value.u32 = cit.mtu.value + (uint32_t)(sizeof(struct ether_header) + FCS_LEN + VLAN_TAG_LEN);
+            attrList.push_back(attr);
+        }
+
+        if (cit.pfc_asym.is_set)
+        {
+            attr.id = SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_MODE;
+            attr.value.s32 = cit.pfc_asym.value;
+            attrList.push_back(attr);
+            if (cit.pfc_asym.value == SAI_PORT_PRIORITY_FLOW_CONTROL_MODE_SEPARATE)
+            {
+                attr.id = SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_TX;
+                attr.value.u8 = static_cast<uint8_t>(cit.pfc_asym.value);
+                attrList.push_back(attr);
+                attr.id = SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_RX;
+                attr.value.u8 = static_cast<uint8_t>(0xff);
+                attrList.push_back(attr);
+            }
+            else
+            {
+                attr.id = SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL;
+                attr.value.u8 = static_cast<uint8_t>(cit.pfc_asym.value);
+                attrList.push_back(attr);
+            }
+        }
+
+        if (cit.tpid.is_set)
+        {
+            attr.id = SAI_PORT_ATTR_TPID;
+            attr.value.u16 = cit.tpid.value;
+            attrList.push_back(attr);
+        }
+
+        if (cit.link_training.is_set)
+        {
+            attr.id = SAI_PORT_ATTR_LINK_TRAINING_ENABLE;
+            attr.value.booldata = cit.link_training.value;
+            attrList.push_back(attr);
+        }
+
+        if (cit.adv_speeds.is_set)
+        {
+            attr.id = SAI_PORT_ATTR_ADVERTISED_SPEED;
+            auto adv_speeds = swss::join(',', cit.adv_speeds.value.begin(), cit.adv_speeds.value.end());
+            std::vector<std::uint32_t> speedList(adv_speeds.begin(), adv_speeds.end());
+            attr.value.u32list.list  = speedList.data();
+            attr.value.u32list.count = static_cast<std::uint32_t>(speedList.size());
+            attrList.push_back(attr);
+        }
+
+        if (cit.interface_type.is_set)
+        {
+            attr.id = SAI_PORT_ATTR_INTERFACE_TYPE;
+            attr.value.s32 = cit.interface_type.value;
+            attrList.push_back(attr);
+        }
+
         attrDataList.push_back(attrList);
         attrCountList.push_back(static_cast<std::uint32_t>(attrDataList.back().size()));
         attrPtrList.push_back(attrDataList.back().data());
@@ -3250,6 +3310,12 @@ bool PortsOrch::initPort(const PortConfig &port)
                 p.m_speed = port.speed.value;
             }
             p.m_fec_mode = port.fec.value;
+            p.m_mtu = port.mtu.value;
+            p.m_pfc_asym = port.pfc_asym.value;
+            p.m_tpid = port.tpid.value;
+            p.m_link_training = port.link_training.value;
+            p.m_adv_speeds = port.adv_speeds.value;
+            p.m_interface_type = port.interface_type.value;
 
             /* Initialize the port and create corresponding host interface */
             if (initializePort(p))
