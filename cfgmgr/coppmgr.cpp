@@ -271,6 +271,14 @@ bool CoppMgr::isDupEntry(const std::string &key, std::vector<FieldValueTuple> &f
     }
     else
     {
+        // If size don't match this suggests that there is a difference in the fields that should be set for this key
+        if (preserved_fvs.size() != fvs.size())
+        {
+            // overwrite -> delete preserved entry from copp table and set a new entry instead
+            m_coppTable.del(key);
+            return false;
+        }
+
         unordered_map<string, string> preserved_copp_entry;
         for (auto prev_fv : preserved_fvs)
         {
