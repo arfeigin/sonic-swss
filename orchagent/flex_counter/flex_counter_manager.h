@@ -39,9 +39,7 @@ enum class CounterType
     HOSTIF_TRAP,
     ROUTE,
     ENI,
-    DASH_METER,
-    SRV6,
-    SWITCH,
+    SRV6
 };
 
 extern bool gTraditionalFlexCounter;
