@@ -21,6 +21,8 @@ extern "C" {
 #include "sai_serialize.h"
 #include "saihelper.h"
 #include "orch.h"
+#include <chrono>
+#include <iomanip>
 
 using namespace std;
 using namespace swss;
@@ -29,7 +31,7 @@ using namespace swss;
 #define STR(s) _STR(s)
 
 #define CONTEXT_CFG_FILE "/usr/share/sonic/hwsku/context_config.json"
-#define SAI_REDIS_SYNC_OPERATION_RESPONSE_TIMEOUT (480*1000)
+#define SAI_REDIS_SYNC_OPERATION_RESPONSE_TIMEOUT (480*2000)
 
 // hwinfo = "INTERFACE_NAME/PHY ID", mii_ioctl_data->phy_id is a __u16
 #define HWINFO_MAX_SIZE IFNAMSIZ + 1 + 5
@@ -375,6 +377,8 @@ void initSaiRedis()
         SWSS_LOG_NOTICE("SAI REDIS response timeout set successfully to %" PRIu64 " ", attr.value.u64);
     }
 
+    auto start = std::chrono::high_resolution_clock::now(); // Start timer
+
     attr.id = SAI_REDIS_SWITCH_ATTR_NOTIFY_SYNCD;
     attr.value.s32 = SAI_REDIS_NOTIFY_SYNCD_INIT_VIEW;
     status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
@@ -384,6 +388,15 @@ void initSaiRedis()
         SWSS_LOG_ERROR("Failed to notify syncd INIT_VIEW, rv:%d gSwitchId %" PRIx64, status, gSwitchId);
         exit(EXIT_FAILURE);
     }
+    auto end = std::chrono::high_resolution_clock::now(); // End timer
+    std::chrono::duration<double> elapsed = end - start; // Calculate elapsed time
+
+    // Convert to minutes, seconds, and milliseconds
+    int minutes = static_cast<int>(elapsed.count() / 60);
+    int seconds = static_cast<int>(elapsed.count()) % 60;
+    int milliseconds = static_cast<int>((elapsed.count() - static_cast<int>(elapsed.count())) * 1000);
+
+    SWSS_LOG_NOTICE("Notify syncd INIT_VIEW, time taken: %02d:%02d:%03d (mm:ss:ms)", minutes, seconds, milliseconds);
     SWSS_LOG_NOTICE("Notify syncd INIT_VIEW");
 
     if (platform && (strstr(platform, MLNX_PLATFORM_SUBSTRING) || strstr(platform, XS_PLATFORM_SUBSTRING)))
